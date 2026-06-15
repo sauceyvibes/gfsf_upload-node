@@ -500,6 +500,7 @@
       const fd = new FormData();
       fd.append('file', file);
       fd.append('upload_preset', cloudConfig.uploadPreset);
+      fd.append('folder', 'gallery');
       if (tag)    fd.append('tags', tag);
 
       try {
