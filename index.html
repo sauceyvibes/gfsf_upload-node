@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Photo Upload — Get Focus Stay Focus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C96A;
+      --gold-dim: #8A6E2F;
+      --black: #0A0A0A;
+      --black-card: #111111;
+      --black-mid: #1A1A1A;
+      --white: #F5F2EC;
+      --red: #c0392b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 3rem;
+      background: rgba(10,10,10,0.97);
+      border-bottom: 1px solid rgba(201,168,76,0.15);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem; letter-spacing: 0.18em; color: var(--gold); text-decoration: none;
+    }
+    .nav-badge {
+      font-size: 0.62rem; letter-spacing: 0.25em; text-transform: uppercase;
+      color: rgba(245,242,236,0.4); border: 1px solid rgba(201,168,76,0.2); padding: 0.3rem 0.8rem;
+    }
+    #signOutBtn {
+      display: none;
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(245,242,236,0.4); background: none; border: 1px solid rgba(201,168,76,0.15);
+      padding: 0.3rem 0.8rem; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #signOutBtn:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* ── LOGIN SCREEN ── */
+    #loginScreen {
+      min-height: calc(100vh - 62px);
+      display: flex; align-items: center; justify-content: center; padding: 2rem;
+    }
+    .login-box {
+      background: var(--black-card);
+      border: 1px solid rgba(201,168,76,0.2);
+      padding: 3rem 2.5rem;
+      width: 100%; max-width: 420px;
+      position: relative; overflow: hidden;
+    }
+    .login-box::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(to right, var(--gold), transparent);
+    }
+    .login-eyebrow {
+      font-size: 0.6rem; letter-spacing: 0.35em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 0.8rem;
+    }
+    .login-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem; letter-spacing: 0.06em; line-height: 1; margin-bottom: 0.6rem;
+    }
+    .login-sub {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 1rem; color: rgba(245,242,236,0.45); margin-bottom: 2.2rem;
+    }
+    .login-field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .login-label {
+      font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold-dim);
+    }
+    .login-input {
+      background: var(--black-mid); border: 1px solid rgba(201,168,76,0.2);
+      color: var(--white); padding: 0.85rem 1rem;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 300;
+      outline: none; transition: border-color 0.2s; width: 100%; letter-spacing: 0.1em;
+    }
+    .login-input:focus { border-color: var(--gold); }
+    .login-error {
+      font-size: 0.75rem; color: #e74c3c; letter-spacing: 0.05em;
+      margin-bottom: 1.2rem; display: none; min-height: 1em;
+    }
+    .login-error.show { display: block; }
+
+    /* ── BUTTONS ── */
+    .btn-gold {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.85rem 2.2rem; background: var(--gold); color: var(--black);
+      font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500;
+      border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: background 0.2s, transform 0.2s; width: 100%; justify-content: center;
+    }
+    .btn-gold:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-2px); }
+    .btn-gold:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.85rem 2rem; background: transparent; color: var(--white);
+      font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 300;
+      border: 1px solid rgba(201,168,76,0.25); cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── MAIN APP (hidden until logged in) ── */
+    #appScreen { display: none; }
+    main { max-width: 1100px; margin: 0 auto; padding: 4rem 3rem; }
+
+    .page-eyebrow { font-size: 0.62rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; }
+    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: 0.06em; line-height: 1; margin-bottom: 0.8rem; }
+    .page-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.05rem; color: rgba(245,242,236,0.55); margin-bottom: 3.5rem; }
+
+    /* UPLOAD CARD */
+    .upload-card {
+      background: var(--black-card); border: 1px solid rgba(201,168,76,0.2);
+      padding: 2.5rem; margin-bottom: 3rem; position: relative; overflow: hidden;
+    }
+    .upload-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(to right, var(--gold), transparent);
+    }
+    .card-label { font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.5rem; }
+
+    /* DROP ZONE */
+    .drop-zone {
+      border: 1px dashed rgba(201,168,76,0.35); padding: 3.5rem 2rem; text-align: center;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+    .drop-icon { font-size: 2.5rem; color: var(--gold-dim); margin-bottom: 1rem; }
+    .drop-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+    .drop-sub { font-size: 0.78rem; color: rgba(245,242,236,0.35); letter-spacing: 0.05em; }
+    #fileInput { display: none; }
+
+    /* PREVIEW */
+    .preview-strip { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+    .preview-thumb { position: relative; width: 88px; height: 88px; border: 1px solid rgba(201,168,76,0.25); overflow: hidden; flex-shrink: 0; }
+    .preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-remove {
+      position: absolute; top: 0; right: 0; background: var(--red); color: #fff;
+      border: none; width: 22px; height: 22px; font-size: 0.65rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+    }
+    .preview-thumb:hover .thumb-remove { opacity: 1; }
+
+    /* META */
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1.8rem; }
+    .field { display: flex; flex-direction: column; gap: 0.45rem; }
+    .field-label { font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold-dim); }
+    .field input, .field select {
+      background: var(--black-mid); border: 1px solid rgba(201,168,76,0.2); color: var(--white);
+      padding: 0.75rem 1rem; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 300;
+      outline: none; transition: border-color 0.2s; appearance: none; width: 100%;
+    }
+    .field input:focus, .field select:focus { border-color: var(--gold); }
+    .field input::placeholder { color: rgba(245,242,236,0.22); }
+
+    /* PROGRESS */
+    .progress-wrap { display: none; margin-top: 1.5rem; }
+    .progress-wrap.active { display: block; }
+    .progress-label { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+    .progress-bar { height: 2px; background: rgba(201,168,76,0.12); position: relative; overflow: hidden; }
+    .progress-fill { position: absolute; top: 0; left: 0; bottom: 0; background: var(--gold); transition: width 0.35s ease; width: 0%; }
+
+    /* ACTIONS */
+    .actions { display: flex; gap: 1rem; margin-top: 1.8rem; flex-wrap: wrap; align-items: center; }
+    .actions .btn-gold { width: auto; }
+
+    /* GALLERY */
+    .gallery-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem; }
+    .gallery-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.08em; }
+    .gallery-count { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,242,236,0.3); }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1px; background: rgba(201,168,76,0.07); }
+    .photo-card { position: relative; aspect-ratio: 4/3; overflow: hidden; background: var(--black-card); cursor: pointer; }
+    .photo-card img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease, filter 0.3s; }
+    .photo-card:hover img { transform: scale(1.06); filter: brightness(0.5); }
+    .photo-overlay {
+      position: absolute; inset: 0; padding: 1rem;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .photo-card:hover .photo-overlay { opacity: 1; }
+    .photo-tag { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.25rem; }
+    .photo-name { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .photo-actions { position: absolute; top: 0.6rem; right: 0.6rem; display: flex; gap: 0.35rem; opacity: 0; transition: opacity 0.3s; }
+    .photo-card:hover .photo-actions { opacity: 1; }
+    .icon-btn { width: 30px; height: 30px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: transform 0.15s; }
+    .icon-btn:hover { transform: scale(1.12); }
+    .icon-btn-view { background: var(--gold); color: var(--black); }
+    .icon-btn-copy { background: var(--black-mid); color: var(--white); border: 1px solid rgba(201,168,76,0.3); }
+
+    /* LIGHTBOX */
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 1.2rem; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 88vw; max-height: 80vh; object-fit: contain; border: 1px solid rgba(201,168,76,0.15); }
+    .lb-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; text-align: center; }
+    .lb-url { font-size: 0.68rem; color: rgba(245,242,236,0.35); word-break: break-all; max-width: 600px; text-align: center; }
+    .lb-close { position: absolute; top: 1.5rem; right: 2rem; color: var(--white); font-size: 2rem; cursor: pointer; opacity: 0.55; background: none; border: none; transition: opacity 0.2s; }
+    .lb-close:hover { opacity: 1; }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--black-card); border: 1px solid var(--gold);
+      padding: 1rem 1.5rem; font-size: 0.78rem; letter-spacing: 0.06em; color: var(--white);
+      z-index: 999; opacity: 0; transform: translateY(8px);
+      transition: opacity 0.3s, transform 0.3s; pointer-events: none; max-width: 300px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.error { border-color: var(--red); }
+
+    /* FOOTER */
+    footer {
+      background: var(--black); border-top: 1px solid rgba(201,168,76,0.1);
+      padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; margin-top: 5rem;
+    }
+    .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.15em; color: var(--gold); }
+    .footer-copy { font-size: 0.65rem; color: rgba(245,242,236,0.25); letter-spacing: 0.1em; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      main { padding: 2.5rem 1.5rem; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 1.5rem; }
+      .login-box { padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">GET FOCUS · STAY FOCUS</a>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <div class="nav-badge">Photo Upload</div>
+    <button id="signOutBtn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lbClose">✕</button>
+  <img id="lbImg" src="" alt=""/>
+  <div class="lb-name" id="lbName"></div>
+  <div class="lb-url" id="lbUrl"></div>
+</div>
+
+<!-- ══════════════ LOGIN SCREEN ══════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <p class="login-eyebrow">Admin Access</p>
+    <h1 class="login-title">Sign In</h1>
+    <p class="login-sub">Enter your password to access the photo upload panel.</p>
+
+    <div class="login-field">
+      <label class="login-label" for="passwordInput">Password</label>
+      <input class="login-input" id="passwordInput" type="password" placeholder="••••••••••••" autocomplete="current-password"/>
+    </div>
+
+    <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
+
+    <button class="btn-gold" id="loginBtn" onclick="attemptLogin()">Enter</button>
+  </div>
+</div>
+
+<!-- ══════════════ APP SCREEN ══════════════ -->
+<div id="appScreen">
+  <main>
+    <p class="page-eyebrow">Admin · Cloudinary</p>
+    <h1 class="page-title">Upload Photos</h1>
+    <p class="page-sub">Upload images directly to your Cloudinary media library.</p>
+
+    <div class="upload-card">
+      <p class="card-label">New Upload</p>
+
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept="image/*" multiple/>
+        <div class="drop-icon">⊕</div>
+        <div class="drop-title">Drop Images Here</div>
+        <div class="drop-sub">Or click to browse · JPG, PNG, WEBP · Multiple files OK</div>
+      </div>
+
+      <div class="preview-strip" id="previewStrip"></div>
+
+      <div class="meta-grid" style="grid-template-columns:1fr;">
+        <div class="field">
+          <label class="field-label" for="photoTag">Tag</label>
+          <input id="photoTag" type="text" placeholder="e.g. portraits, sports"/>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label">
+          <span id="progressText">Uploading…</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-gold" id="uploadBtn" disabled>⊕ &nbsp;Upload to Cloudinary</button>
+        <button class="btn-outline" id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div id="gallerySection" style="display:none;">
+      <div class="gallery-header">
+        <div class="gallery-title">Uploaded This Session</div>
+        <div class="gallery-count" id="galleryCount">0 Photos</div>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-logo">GET FOCUS · STAY FOCUS</div>
+    <div class="footer-copy">Photo Upload · Powered by Cloudinary</div>
+  </footer>
+</div>
+
+<script>
+  // ── SESSION ──
+  // Token lives only in memory — never written to localStorage or cookies.
+  // Inspect element shows nothing useful; the real password never reaches the browser.
+  let SESSION_TOKEN = null;
+  let cloudConfig   = null;
+  let pendingFiles  = [];
+  let uploadedPhotos = [];
+
+  // ── TOAST ──
+  let toastTimer;
+  function toast(msg, err = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = err ? 'error show' : 'show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.className = '', 3500);
+  }
+
+  // ── LOGIN ──
+  document.getElementById('passwordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+
+  async function attemptLogin() {
+    const pw  = document.getElementById('passwordInput').value;
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('loginError');
+
+    if (!pw) return;
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    err.classList.remove('show');
+
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Incorrect password');
+
+      SESSION_TOKEN = data.token;
+      document.getElementById('passwordInput').value = '';
+      showApp();
+
+    } catch (e) {
+      err.textContent = e.message;
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Enter';
+    }
+  }
+
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    document.getElementById('signOutBtn').style.display = 'inline-flex';
+    loadCloudinaryConfig();
+  }
+
+  function signOut() {
+    SESSION_TOKEN = null;
+    cloudConfig   = null;
+    pendingFiles  = [];
+    uploadedPhotos = [];
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('signOutBtn').style.display = 'none';
+    document.getElementById('previewStrip').innerHTML = '';
+    document.getElementById('photoGrid').innerHTML = '';
+    document.getElementById('gallerySection').style.display = 'none';
+  }
+
+  // ── CLOUDINARY CONFIG (requires valid token) ──
+  async function loadCloudinaryConfig() {
+    try {
+      const res = await fetch('/api/cloudinary-config');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+      if (!data.cloudName || !data.uploadPreset) throw new Error('Missing cloudName or uploadPreset');
+      cloudConfig = data;
+      syncUploadBtn();
+    } catch (err) {
+      toast('Cloudinary error: ' + err.message, true);
+    }
+  }
+
+  // ── FILE HANDLING ──
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    pendingFiles.push(...files); renderPreviews(); syncUploadBtn();
+  });
+  fileInput.addEventListener('change', () => {
+    pendingFiles.push(...Array.from(fileInput.files));
+    renderPreviews(); syncUploadBtn(); fileInput.value = '';
+  });
+
+  function renderPreviews() {
+    const strip = document.getElementById('previewStrip');
+    strip.innerHTML = '';
+    pendingFiles.forEach((f, i) => {
+      const url = URL.createObjectURL(f);
+      const el = document.createElement('div');
+      el.className = 'preview-thumb';
+      el.innerHTML = `<img src="${url}"/><button class="thumb-remove" data-i="${i}">✕</button>`;
+      strip.appendChild(el);
+    });
+    strip.querySelectorAll('.thumb-remove').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        pendingFiles.splice(+btn.dataset.i, 1);
+        renderPreviews(); syncUploadBtn();
+      });
+    });
+  }
+
+  function syncUploadBtn() {
+    document.getElementById('uploadBtn').disabled = !pendingFiles.length || !cloudConfig;
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    pendingFiles = []; renderPreviews(); syncUploadBtn();
+    
+    document.getElementById('photoTag').value = '';
+  });
+
+  // ── UPLOAD ──
+  document.getElementById('uploadBtn').addEventListener('click', async () => {
+    if (!pendingFiles.length || !cloudConfig) return;
+
+    
+    const tag    = document.getElementById('photoTag').value.trim();
+    const progressWrap = document.getElementById('progressWrap');
+    const fill   = document.getElementById('progressFill');
+    const pText  = document.getElementById('progressText');
+    const pPct   = document.getElementById('progressPct');
+
+    progressWrap.classList.add('active');
+    document.getElementById('uploadBtn').disabled = true;
+
+    const total = pendingFiles.length;
+    let done = 0;
+
+    for (const file of pendingFiles) {
+      pText.textContent = `Uploading ${done + 1} of ${total} — ${file.name}`;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', cloudConfig.uploadPreset);
+      if (tag)    fd.append('tags', tag);
+
+      try {
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudConfig.cloudName}/image/upload`,
+          { method: 'POST', body: fd }
+        );
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Upload failed'); }
+        const data = await res.json();
+        uploadedPhotos.unshift({ url: data.secure_url, publicId: data.public_id, name: file.name, tag: tag || 'Uploaded' });
+      } catch (err) {
+        toast(`✕ ${file.name}: ${err.message}`, true);
+      }
+
+      done++;
+      const pct = Math.round((done / total) * 100);
+      fill.style.width = pct + '%';
+      pPct.textContent = pct + '%';
+    }
+
+    pText.textContent = 'Done!';
+    setTimeout(() => { progressWrap.classList.remove('active'); fill.style.width = '0%'; }, 1200);
+    toast(`✓ ${done} photo${done !== 1 ? 's' : ''} uploaded to Cloudinary`);
+    pendingFiles = []; renderPreviews(); syncUploadBtn();
+    
+    document.getElementById('photoTag').value = '';
+    renderGallery();
+  });
+
+  // ── SESSION GALLERY ──
+  function renderGallery() {
+    const section = document.getElementById('gallerySection');
+    const grid    = document.getElementById('photoGrid');
+    const count   = document.getElementById('galleryCount');
+    if (!uploadedPhotos.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    count.textContent = `${uploadedPhotos.length} Photo${uploadedPhotos.length !== 1 ? 's' : ''}`;
+    grid.innerHTML = uploadedPhotos.map((p, i) => `
+      <div class="photo-card">
+        <img src="${p.url}" alt="${p.name}" loading="lazy"/>
+        <div class="photo-overlay">
+          <div class="photo-tag">${p.tag}</div>
+          <div class="photo-name">${p.name}</div>
+        </div>
+        <div class="photo-actions">
+          <button class="icon-btn icon-btn-view" data-i="${i}" title="View">⤢</button>
+          <button class="icon-btn icon-btn-copy" data-url="${p.url}" title="Copy URL">⎘</button>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.icon-btn-view').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const p = uploadedPhotos[+btn.dataset.i];
+        document.getElementById('lbImg').src = p.url;
+        document.getElementById('lbName').textContent = p.name;
+        document.getElementById('lbUrl').textContent = p.url;
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+    grid.querySelectorAll('.photo-card').forEach(card => {
+      card.addEventListener('click', e => { if (e.target.closest('.photo-actions')) return; card.querySelector('.icon-btn-view').click(); });
+    });
+    grid.querySelectorAll('.icon-btn-copy').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(btn.dataset.url)
+          .then(() => toast('✓ URL copied to clipboard'))
+          .catch(() => toast('Could not copy', true));
+      });
+    });
+  }
+
+  // ── LIGHTBOX ──
+  document.getElementById('lbClose').addEventListener('click', () => {
+    document.getElementById('lightbox').classList.remove('open'); document.body.style.overflow = '';
+  });
+  document.getElementById('lightbox').addEventListener('click', e => {
+    if (e.target === document.getElementById('lightbox')) { document.getElementById('lightbox').classList.remove('open'); document.body.style.overflow = ''; }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('open'); document.body.style.overflow = ''; }
+  });
+</script>
+</body>
+</html>
